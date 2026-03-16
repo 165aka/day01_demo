@@ -34,13 +34,30 @@
               />
             </div>
             <div v-if="showUserMenu" class="dropdown-menu">
-              <a href="#" class="dropdown-item">我的发布</a>
-              <a href="#" class="dropdown-item">我的收藏</a>
-              <a href="#" class="dropdown-item">消息中心</a>
-              <div class="divider"></div>
-              <a href="#" class="dropdown-item" @click.prevent="logout"
-                >退出登录</a
+              <a href="#" @click.prevent="goToProfile" class="dropdown-item">
+                👤 个人中心
+              </a>
+              <a
+                href="#"
+                @click.prevent="goToMyPublished"
+                class="dropdown-item"
               >
+                📦 我的发布
+              </a>
+              <a
+                href="#"
+                @click.prevent="goToMyFavorites"
+                class="dropdown-item"
+              >
+                ⭐ 我的收藏
+              </a>
+              <a href="#" @click.prevent="goToMessages" class="dropdown-item">
+                💬 消息中心
+              </a>
+              <div class="divider"></div>
+              <a href="#" @click.prevent="handleLogout" class="dropdown-item">
+                🚪 退出登录
+              </a>
             </div>
           </div>
         </div>
@@ -272,6 +289,158 @@
                 {{ selectedProduct.isFavorite ? "已收藏" : "收藏" }}
               </button>
             </div>
+            <div class="detail-actions">
+              <button @click="openWantModal(selectedProduct)" class="buy-btn">
+                我想要
+              </button>
+              <button class="fav-btn" @click="toggleFavorite(selectedProduct)">
+                {{ selectedProduct.isFavorite ? "已收藏" : "收藏" }}
+              </button>
+            </div>
+
+            <!-- 我想要弹窗 -->
+            <div
+              v-if="showWantModal"
+              class="modal-overlay"
+              @click.self="showWantModal = false"
+            >
+              <div class="modal-content want-modal">
+                <div class="modal-header">
+                  <h2>🙋 我想要</h2>
+                  <button @click="showWantModal = false" class="close-btn">
+                    ×
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <div class="product-info-summary">
+                    <img :src="wantForm.product.image" alt="" />
+                    <div class="info">
+                      <h4>{{ wantForm.product.title }}</h4>
+                      <span class="price">¥{{ wantForm.product.price }}</span>
+                    </div>
+                  </div>
+
+                  <form @submit.prevent="submitWant">
+                    <div class="form-group">
+                      <label class="form-label">
+                        💰 你的心理预期价格
+                        <span class="hint">（卖家可以看到）</span>
+                      </label>
+                      <input
+                        v-model.number="wantForm.expectedPrice"
+                        type="number"
+                        placeholder="输入你的出价"
+                        required
+                        class="form-input"
+                      />
+                      <div v-if="wantForm.expectedPrice" class="price-diff">
+                        <span
+                          v-if="wantForm.expectedPrice < wantForm.product.price"
+                          class="diff-negative"
+                        >
+                          比标价低 ¥{{
+                            (
+                              wantForm.product.price - wantForm.expectedPrice
+                            ).toFixed(2)
+                          }}
+                        </span>
+                        <span
+                          v-else-if="
+                            wantForm.expectedPrice > wantForm.product.price
+                          "
+                          class="diff-positive"
+                        >
+                          比标价高 ¥{{
+                            (
+                              wantForm.expectedPrice - wantForm.product.price
+                            ).toFixed(2)
+                          }}
+                        </span>
+                        <span v-else class="diff-equal"> 与标价相同 </span>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">
+                        🔄 用我的物品交换
+                        <span class="hint">（可选，补齐差价）</span>
+                      </label>
+                      <div class="exchange-selector">
+                        <select
+                          v-model="wantForm.exchangeProductId"
+                          class="exchange-select"
+                        >
+                          <option value="">不使用物品交换</option>
+                          <option
+                            v-for="item in myPublishedItems"
+                            :key="item.id"
+                            :value="item.id"
+                          >
+                            {{ item.title }} - ¥{{ item.price }}
+                          </option>
+                        </select>
+                      </div>
+                      <div
+                        v-if="wantForm.exchangeProductId"
+                        class="exchange-info"
+                      >
+                        <div class="exchange-item">
+                          <img :src="selectedExchangeItem?.image" alt="" />
+                          <div class="details">
+                            <span class="name">{{
+                              selectedExchangeItem?.title
+                            }}</span>
+                            <span class="value"
+                              >价值 ¥{{ selectedExchangeItem?.price }}</span
+                            >
+                          </div>
+                        </div>
+                        <div v-if="selectedExchangeItem" class="exchange-calc">
+                          <div class="calc-row">
+                            <span>对方物品：</span>
+                            <span class="amount"
+                              >¥{{ wantForm.product.price }}</span
+                            >
+                          </div>
+                          <div class="calc-row">
+                            <span>你的物品：</span>
+                            <span class="amount"
+                              >-¥{{ selectedExchangeItem.price }}</span
+                            >
+                          </div>
+                          <div class="calc-row total">
+                            <span>需补差价：</span>
+                            <span
+                              :class="[
+                                'amount',
+                                exchangeNeedPay >= 0 ? 'pay' : 'get',
+                              ]"
+                            >
+                              {{
+                                exchangeNeedPay >= 0 ? "你需要支付" : "你将获得"
+                              }}
+                              ¥{{ Math.abs(exchangeNeedPay).toFixed(2) }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">📝 留言给卖家</label>
+                      <textarea
+                        v-model="wantForm.message"
+                        rows="3"
+                        placeholder="说说你的情况，比如：诚心想要、可小刀等..."
+                        class="form-textarea"
+                      ></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn">发送给卖家</button>
+                  </form>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -301,11 +470,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, getCurrentInstance } from "vue";
-
-// ✅ 获取路由实例
-const instance = getCurrentInstance();
-const router = instance.proxy.$router;
+import { ref, computed, onMounted } from "vue";
 
 // 状态管理
 const searchQuery = ref("");
@@ -316,6 +481,7 @@ const showUserMenu = ref(false);
 const showPublishModal = ref(false);
 const selectedProduct = ref(null);
 const loading = ref(false);
+const showWantModal = ref(false);
 
 // 数据
 const categories = [
@@ -344,6 +510,46 @@ const newProduct = ref({
   originalPrice: "",
   category: "",
   description: "",
+});
+
+// 模拟我的发布物品
+const myPublishedItems = ref([
+  {
+    id: 1,
+    title: "考研英语词汇书",
+    price: 15,
+    image:
+      "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=400&h=400&fit=crop",
+  },
+  {
+    id: 2,
+    title: "罗技 G502 鼠标",
+    price: 150,
+    image:
+      "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop",
+  },
+]);
+
+// 我想要表单
+const wantForm = ref({
+  product: null,
+  expectedPrice: null,
+  exchangeProductId: "",
+  message: "",
+});
+
+// 计算属性：选中的交换物品
+const selectedExchangeItem = computed(() => {
+  if (!wantForm.value.exchangeProductId) return null;
+  return myPublishedItems.value.find(
+    (item) => item.id === wantForm.value.exchangeProductId
+  );
+});
+
+// 计算属性：需要补的差价
+const exchangeNeedPay = computed(() => {
+  if (!wantForm.value.product || !selectedExchangeItem.value) return 0;
+  return wantForm.value.product.price - selectedExchangeItem.value.price;
 });
 
 // 模拟商品数据
@@ -567,18 +773,71 @@ const loadMore = () => {
     // 这里可以加载更多数据
   }, 1000);
 };
-// 退出登录方法
-const logout = () => {
-  // 1. 清除本地存储的用户信息（如 token）
-  localStorage.removeItem("token");
-  sessionStorage.removeItem("userInfo");
 
-  // 2. 跳转到登录页面
-  router.push("/login");
+const goToProfile = () => {
+  window.location.href = "/me";
+};
 
-  // 3. 可选：提示用户
-  // alert("已退出登录");
-  // 这里可以添加实际的退出逻辑，例如清除用户信息、跳转到登录页等
+const goToMyPublished = () => {
+  window.location.href = "/me?tab=published";
+};
+
+const goToMyFavorites = () => {
+  window.location.href = "/me?tab=favorites";
+};
+
+const goToMessages = () => {
+  window.location.href = "/me?tab=messages";
+};
+
+const handleLogout = () => {
+  if (confirm("确定要退出登录吗？")) {
+    window.location.href = "/login";
+  }
+};
+
+// 方法
+const openWantModal = (product) => {
+  wantForm.value = {
+    product,
+    expectedPrice: product.price,
+    exchangeProductId: "",
+    message: "",
+  };
+  showWantModal.value = true;
+};
+
+const submitWant = () => {
+  console.log("提交想要:", {
+    productId: wantForm.value.product.id,
+    expectedPrice: wantForm.value.expectedPrice,
+    exchangeItem: selectedExchangeItem.value,
+    needPay: exchangeNeedPay.value,
+    message: wantForm.value.message,
+  });
+
+  // 发送消息给卖家
+  const message = {
+    id: Date.now(),
+    type: "want",
+    sender: "我",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+    content: `我对你的【${wantForm.value.product.title}】很感兴趣！${
+      wantForm.value.message ? "\n留言：" + wantForm.value.message : ""
+    }${
+      selectedExchangeItem.value
+        ? `\n想用【${selectedExchangeItem.value.title}】交换，需${
+            exchangeNeedPay.value >= 0 ? "补" : "退"
+          }差价¥${Math.abs(exchangeNeedPay.value).toFixed(2)}`
+        : `\n心理预期价格：¥${wantForm.value.expectedPrice}`
+    }`,
+    time: "刚刚",
+    unread: false,
+  };
+
+  console.log("发送给卖家的消息:", message);
+  showWantModal.value = false;
+  alert("已成功发送给卖家，等待对方回复~");
 };
 
 // 点击外部关闭下拉菜单
