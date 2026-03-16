@@ -67,7 +67,25 @@ export default ({ $axios }, inject) => {
         return res
       }
     },
-    error => {
+    error => {// router/index.js
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem("token");
+  
+  if (to.path !== "/login" && !token) {
+    next("/login");
+  } else {
+    next();
+  }
+});// router/index.js
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem("token");
+  
+  if (to.path !== "/login" && !token) {
+    next("/login");
+  } else {
+    next();
+  }
+});
       console.log('666err' + error) // for debug
       // Message({
       //   message: error.message + "66666",

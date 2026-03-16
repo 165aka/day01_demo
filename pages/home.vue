@@ -38,7 +38,9 @@
               <a href="#" class="dropdown-item">我的收藏</a>
               <a href="#" class="dropdown-item">消息中心</a>
               <div class="divider"></div>
-              <a href="#" class="dropdown-item">退出登录</a>
+              <a href="#" class="dropdown-item" @click.prevent="logout"
+                >退出登录</a
+              >
             </div>
           </div>
         </div>
@@ -299,7 +301,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, getCurrentInstance } from "vue";
+
+// ✅ 获取路由实例
+const instance = getCurrentInstance();
+const router = instance.proxy.$router;
 
 // 状态管理
 const searchQuery = ref("");
@@ -560,6 +566,19 @@ const loadMore = () => {
     loading.value = false;
     // 这里可以加载更多数据
   }, 1000);
+};
+// 退出登录方法
+const logout = () => {
+  // 1. 清除本地存储的用户信息（如 token）
+  localStorage.removeItem("token");
+  sessionStorage.removeItem("userInfo");
+
+  // 2. 跳转到登录页面
+  router.push("/login");
+
+  // 3. 可选：提示用户
+  // alert("已退出登录");
+  // 这里可以添加实际的退出逻辑，例如清除用户信息、跳转到登录页等
 };
 
 // 点击外部关闭下拉菜单
