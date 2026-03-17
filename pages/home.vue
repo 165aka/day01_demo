@@ -238,8 +238,19 @@
             </div>
             <div class="form-group">
               <label>上传图片</label>
-              <div class="upload-area">
-                <div class="upload-placeholder">
+              <div class="upload-area" @click="triggerFileInput" @dragover.prevent @drop.prevent="handleFileDrop">
+                <input
+                  ref="fileInput"
+                  type="file"
+                  accept="image/*"
+                  @change="handleFileSelect"
+                  style="display: none;"
+                />
+                <div v-if="uploadedImage" class="uploaded-preview">
+                  <img :src="uploadedImage" alt="已上传预览" class="preview-image" />
+                  <button type="button" @click.stop="removeImage" class="remove-image-btn">×</button>
+                </div>
+                <div v-else class="upload-placeholder">
                   <span class="upload-icon">📷</span>
                   <span>点击或拖拽上传图片</span>
                 </div>
@@ -513,6 +524,10 @@ const newProduct = ref({
   description: "",
 });
 
+// 图片上传相关
+const uploadedImage = ref('');
+const fileInput = ref(null);
+
 // 模拟我的发布物品（后续可从后端获取）
 const myPublishedItems = ref([]);
 
@@ -604,6 +619,88 @@ const viewProduct = (product) => {
   selectedProduct.value = product;
 };
 
+// 触发文件选择
+const triggerFileInput = () => {
+  if (fileInput.value) {
+    fileInput.value.click();
+  }
+};
+
+// 处理文件选择
+const handleFileSelect = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    validateAndUpload(file);
+  }
+};
+
+// 处理拖拽上传
+const handleFileDrop = (event) => {
+  const file = event.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    validateAndUpload(file);
+  } else {
+    alert('请上传图片文件');
+  }
+};
+
+// 验证并上传图片
+const validateAndUpload = (file) => {
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    alert('请上传图片文件');
+    return;
+  }
+  
+  // 验证文件大小（限制 5MB）
+  if (file.size > 5 * 1024 * 1024) {
+    alert('图片大小不能超过 5MB');
+    return;
+  }
+  
+  // 读取并预览图片
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    uploadedImage.value = e.target.result;
+    // 这里可以将图片上传到服务器，获取图片 URL
+    // uploadImageToServer(file);
+  };
+  reader.readAsDataURL(file);
+};
+
+// 移除图片
+const removeImage = () => {
+  uploadedImage.value = '';
+  if (fileInput.value) {
+    fileInput.value.value = '';
+  }
+};
+
+// 可选：上传图片到服务器
+const uploadImageToServer = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const res = await fetch('http://localhost:10010/upload', {
+      method: 'POST',
+      headers: {
+        'X-Token': localStorage.getItem('token') || ''
+      },
+      body: formData
+    });
+    
+    if (res.ok) {
+      const result = await res.json();
+      if (result.code === 20000) {
+        uploadedImage.value = result.data.url;
+      }
+    }
+  } catch (error) {
+    console.error('上传图片失败:', error);
+  }
+};
+
 const publishProduct = async () => {
   // 数据验证
   if (!newProduct.value.title || !newProduct.value.title.trim()) {
@@ -625,7 +722,7 @@ const publishProduct = async () => {
     originalPrice: newProduct.value.originalPrice ? parseFloat(newProduct.value.originalPrice) : null,
     category: newProduct.value.category,
     description: newProduct.value.description || '',
-    image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
+    image: uploadedImage.value || 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
     tags: '新品',
     sellerId: 1,
     sellerName: '当前用户',
@@ -676,6 +773,10 @@ const publishProduct = async () => {
           category: "",
           description: "",
         };
+        uploadedImage.value = '';
+        if (fileInput.value) {
+          fileInput.value.value = '';
+        }
         alert("发布成功！");
       } else {
         alert(result.message || "发布失败");
@@ -1519,11 +1620,57 @@ onMounted(() => {
   text-align: center;
   cursor: pointer;
   transition: all 0.3s;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .upload-area:hover {
   border-color: #667eea;
   background: #f8f9ff;
+}
+
+.uploaded-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #ff4757;
+  color: #ff4757;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.remove-image-btn:hover {
+  background: #ff4757;
+  color: white;
+  transform: scale(1.1);
 }
 
 .upload-placeholder {
