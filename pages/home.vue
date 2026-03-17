@@ -471,6 +471,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { mapState, mapActions } from 'vuex';
 
 // 状态管理
 const searchQuery = ref("");
@@ -512,23 +513,8 @@ const newProduct = ref({
   description: "",
 });
 
-// 模拟我的发布物品
-const myPublishedItems = ref([
-  {
-    id: 1,
-    title: "考研英语词汇书",
-    price: 15,
-    image:
-      "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=400&h=400&fit=crop",
-  },
-  {
-    id: 2,
-    title: "罗技 G502 鼠标",
-    price: 150,
-    image:
-      "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop",
-  },
-]);
+// 模拟我的发布物品（后续可从后端获取）
+const myPublishedItems = ref([]);
 
 // 我想要表单
 const wantForm = ref({
@@ -552,145 +538,8 @@ const exchangeNeedPay = computed(() => {
   return wantForm.value.product.price - selectedExchangeItem.value.price;
 });
 
-// 模拟商品数据
-const products = ref([
-  {
-    id: 1,
-    title: "高等数学同济第七版 上下册",
-    price: 25,
-    originalPrice: 89,
-    image:
-      "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop",
-    category: "books",
-    tags: ["教材", "9成新", "可小刀"],
-    sellerName: "数学系学长",
-    sellerAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=1",
-    location: "图书馆",
-    isNew: false,
-    isUrgent: true,
-    isFavorite: false,
-    description: "考研用完的，笔记很详细，适合大一学弟学妹",
-  },
-  {
-    id: 2,
-    title: "iPad Air 4 64G 天蓝色",
-    price: 2800,
-    originalPrice: 4799,
-    image:
-      "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400&h=400&fit=crop",
-    category: "digital",
-    tags: ["数码", "保修期内", "原装"],
-    sellerName: "数码达人",
-    sellerAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=2",
-    location: "科技楼",
-    isNew: false,
-    isUrgent: false,
-    isFavorite: true,
-    description: "买了Pro，这个闲置了，成色很新，带原装充电器",
-  },
-  {
-    id: 3,
-    title: "宜家台灯 护眼学习灯",
-    price: 45,
-    originalPrice: 129,
-    image:
-      "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400&h=400&fit=crop",
-    category: "life",
-    tags: ["生活用品", "几乎全新"],
-    sellerName: "毕业学姐",
-    sellerAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=3",
-    location: "女生宿舍3号楼",
-    isNew: true,
-    isUrgent: false,
-    isFavorite: false,
-    description: "毕业带不走，便宜出，灯光很柔和",
-  },
-  {
-    id: 4,
-    title: "尤尼克斯羽毛球拍",
-    price: 180,
-    originalPrice: 450,
-    image:
-      "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=400&h=400&fit=crop",
-    category: "sports",
-    tags: ["体育", "轻微使用痕迹"],
-    sellerName: "羽球少年",
-    sellerAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=4",
-    location: "体育馆",
-    isNew: false,
-    isUrgent: true,
-    isFavorite: false,
-    description: "换新款了，这个闲置，拉的是95线26磅",
-  },
-  {
-    id: 5,
-    title: "捷安特山地车 ATX777",
-    price: 800,
-    originalPrice: 2198,
-    image:
-      "https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?w=400&h=400&fit=crop",
-    category: "transport",
-    tags: ["交通工具", "可试骑"],
-    sellerName: "骑行社社长",
-    sellerAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=5",
-    location: "北门停车场",
-    isNew: false,
-    isUrgent: false,
-    isFavorite: false,
-    description: "车况良好，刹车变速都正常，送车锁和头盔",
-  },
-  {
-    id: 6,
-    title: "耐克空军一号 42码",
-    price: 320,
-    originalPrice: 749,
-    image:
-      "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop",
-    category: "clothes",
-    tags: ["鞋靴", "9成新", "正品"],
-    sellerName: "潮流玩家",
-    sellerAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=6",
-    location: "男生宿舍5号楼",
-    isNew: false,
-    isUrgent: false,
-    isFavorite: false,
-    description: "买大了，穿了两次，鞋盒还在",
-  },
-  {
-    id: 7,
-    title: "罗技G502鼠标",
-    price: 150,
-    originalPrice: 399,
-    image:
-      "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop",
-    category: "digital",
-    tags: ["数码", "游戏外设"],
-    sellerName: "电竞选手",
-    sellerAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=7",
-    location: "网吧",
-    isNew: false,
-    isUrgent: false,
-    isFavorite: true,
-    description: "升级无线版了，这个有线版闲置，功能正常",
-  },
-  {
-    id: 8,
-    title: "考研英语词汇书",
-    price: 15,
-    originalPrice: 45,
-    image:
-      "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=400&h=400&fit=crop",
-    category: "books",
-    tags: ["教材", "笔记丰富"],
-    sellerName: "上岸学长",
-    sellerAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=8",
-    location: "自习室",
-    isNew: false,
-    isUrgent: true,
-    isFavorite: false,
-    description: "考研英语一85分学长笔记，重点词汇都有标记",
-  },
-]);
+// 商品数据
+const products = ref([]);
 
 // 计算属性：筛选后的商品
 const filteredProducts = computed(() => {
@@ -729,22 +578,25 @@ const filteredProducts = computed(() => {
 
 // 方法
 const handleSearch = () => {
-  console.log("搜索:", searchQuery.value);
+  loadProducts();
 };
 
 const selectCategory = (id) => {
   selectedCategory.value = id;
+  loadProducts();
 };
 
 const selectFilter = (value) => {
   selectedFilter.value = value;
+  loadProducts();
 };
 
 const toggleUserMenu = () => {
   showUserMenu.value = !showUserMenu.value;
 };
 
-const toggleFavorite = (product) => {
+const toggleFavorite = async (product) => {
+  // TODO: 调用后端收藏 API
   product.isFavorite = !product.isFavorite;
 };
 
@@ -752,18 +604,89 @@ const viewProduct = (product) => {
   selectedProduct.value = product;
 };
 
-const publishProduct = () => {
-  console.log("发布商品:", newProduct.value);
-  showPublishModal.value = false;
-  // 重置表单
-  newProduct.value = {
-    title: "",
-    price: "",
-    originalPrice: "",
-    category: "",
-    description: "",
+const publishProduct = async () => {
+  // 数据验证
+  if (!newProduct.value.title || !newProduct.value.title.trim()) {
+    alert('请输入商品名称');
+    return;
+  }
+  if (!newProduct.value.price || parseFloat(newProduct.value.price) <= 0) {
+    alert('请输入有效的价格');
+    return;
+  }
+  if (!newProduct.value.category) {
+    alert('请选择商品分类');
+    return;
+  }
+  
+  const requestBody = {
+    title: newProduct.value.title.trim(),
+    price: parseFloat(newProduct.value.price),
+    originalPrice: newProduct.value.originalPrice ? parseFloat(newProduct.value.originalPrice) : null,
+    category: newProduct.value.category,
+    description: newProduct.value.description || '',
+    image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
+    tags: '新品',
+    sellerId: 1,
+    sellerName: '当前用户',
+    sellerAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+    location: '校本部',
+    isNew: 1,
+    isUrgent: 0
   };
-  alert("发布成功！");
+  
+  try {
+    const res = await fetch('http://localhost:10010/product', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Token': localStorage.getItem('token') || ''
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    if (res.ok) {
+      const result = await res.json();
+      if (result.code === 20000) {
+        // 发布成功，添加到本地列表
+        const newProductItem = {
+          ...requestBody,
+          id: Date.now(),
+          status: 'selling',
+          views: 0
+        };
+        
+        // 同时更新 home 和 me 的数据
+        products.value.unshift({
+          ...requestBody,
+          id: Date.now(),
+          isFavorite: 0,
+          tags: ['新品']
+        });
+        myPublishedItems.value.unshift(newProductItem);
+        
+        // 保存到 localStorage，让 me 页面也能看到
+        localStorage.setItem('myPublished', JSON.stringify(myPublishedItems.value));
+        
+        showPublishModal.value = false;
+        newProduct.value = {
+          title: "",
+          price: "",
+          originalPrice: "",
+          category: "",
+          description: "",
+        };
+        alert("发布成功！");
+      } else {
+        alert(result.message || "发布失败");
+      }
+    } else {
+      alert('网络错误');
+    }
+  } catch (error) {
+    console.error('发布商品失败:', error);
+    alert("发布失败：" + error.message);
+  }
 };
 
 const loadMore = () => {
@@ -840,8 +763,64 @@ const submitWant = () => {
   alert("已成功发送给卖家，等待对方回复~");
 };
 
+// 加载商品数据
+const loadProducts = async () => {
+  loading.value = true;
+  try {
+    const res = await fetch('http://localhost:10010/product/search?category=&keyword=&sortBy=newest', {
+      method: 'GET',
+      headers: {
+        'X-Token': localStorage.getItem('token') || ''
+      }
+    });
+    
+    if (res.ok) {
+      const result = await res.json();
+      if (result.code === 20000) {
+        products.value = result.data || [];
+      }
+    }
+  } catch (error) {
+    console.error('加载商品失败:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 加载我的发布
+const loadMyPublished = async () => {
+  try {
+    // 先从 localStorage 获取
+    const saved = localStorage.getItem('myPublished');
+    if (saved) {
+      myPublishedItems.value = JSON.parse(saved);
+    }
+    
+    // 再从后端加载最新数据
+    const res = await fetch('http://localhost:10010/product/my-published', {
+      method: 'GET',
+      headers: {
+        'X-Token': localStorage.getItem('token') || ''
+      }
+    });
+    
+    if (res.ok) {
+      const result = await res.json();
+      if (result.code === 20000) {
+        myPublishedItems.value = result.data || [];
+        // 保存到 localStorage
+        localStorage.setItem('myPublished', JSON.stringify(myPublishedItems.value));
+      }
+    }
+  } catch (error) {
+    console.error('加载我的发布失败:', error);
+  }
+};
+
 // 点击外部关闭下拉菜单
 onMounted(() => {
+  loadProducts();
+  loadMyPublished();
   document.addEventListener("click", (e) => {
     if (!e.target.closest(".user-menu")) {
       showUserMenu.value = false;

@@ -25,7 +25,8 @@ export default {
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
     '@/plugins/element-ui',
-    { src: '@/plugins/axios', mode: 'client' }
+    { src: '@/plugins/axios', mode: 'client' },
+    { src: '@/plugins/product-manager', mode: 'client' }
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components

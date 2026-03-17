@@ -277,6 +277,19 @@
               </div>
             </div>
             <div class="form-group">
+              <label>物品分类</label>
+              <select v-model="newProduct.category" class="category-select" required>
+                <option value="">请选择分类</option>
+                <option value="books">📚 教材书籍</option>
+                <option value="digital">💻 数码电子</option>
+                <option value="life">🏠 生活用品</option>
+                <option value="sports">⚽ 体育器材</option>
+                <option value="clothes">👕 衣物鞋帽</option>
+                <option value="transport">🚲 交通工具</option>
+                <option value="others">📦 其他</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label>物品描述</label>
               <textarea
                 v-model="newProduct.description"
@@ -329,26 +342,7 @@ export default {
           location: "科技楼",
         },
       ],
-      published: [
-        {
-          id: 1,
-          title: "考研英语词汇书",
-          price: 15,
-          image:
-            "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=400&h=400&fit=crop",
-          status: "selling",
-          views: 156,
-        },
-        {
-          id: 2,
-          title: "罗技 G502 鼠标",
-          price: 150,
-          image:
-            "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop",
-          status: "sold",
-          views: 289,
-        },
-      ],
+      published: [],
       messages: [
         {
           id: 1,
@@ -379,6 +373,7 @@ export default {
         title: "",
         price: "",
         originalPrice: "",
+        category: "",
         description: "",
       },
       menuItems: [
@@ -390,6 +385,13 @@ export default {
     };
   },
   methods: {
+    loadMyPublished() {
+      // 从 localStorage 获取已发布的商品
+      const saved = localStorage.getItem('myPublished');
+      if (saved) {
+        this.published = JSON.parse(saved);
+      }
+    },
     removeFavorite(id) {
       this.favorites = this.favorites.filter((item) => item.id !== id);
       this.userInfo.favorites--;
@@ -415,24 +417,33 @@ export default {
       }
     },
     publishProduct() {
-      console.log("发布商品:", this.newProduct);
-      this.published.unshift({
-        id: Date.now(),
-        title: this.newProduct.title,
-        price: this.newProduct.price,
-        image:
-          "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
-        status: "selling",
-        views: 0,
-      });
-      this.showPublishModal = false;
-      this.newProduct = {
-        title: "",
-        price: "",
-        originalPrice: "",
-        description: "",
-      };
-alert("发布成功！");
+      // 数据验证
+      if (!this.newProduct.category) {
+        alert('请选择商品分类');
+        return;
+      }
+      
+      // 调用后端 API 发布商品
+      this.$publishProduct(this.newProduct)
+        .then(result => {
+          if (result.success) {
+            this.showPublishModal = false;
+            this.newProduct = {
+              title: "",
+              price: "",
+              originalPrice: "",
+              category: "",
+              description: "",
+            };
+            alert("发布成功！");
+          } else {
+            alert(result.message || "发布失败");
+          }
+        })
+        .catch(error => {
+          console.error('发布失败:', error);
+          alert("发布失败：" + error.message);
+        });
     },
   },
   mounted() {
@@ -440,6 +451,8 @@ alert("发布成功！");
     if (tab && ['favorites', 'published', 'messages', 'settings'].includes(tab)) {
       this.activeMenu = tab;
     }
+    // 加载我的发布数据
+    this.loadMyPublished();
   },
 };
 </script>
@@ -1237,7 +1250,8 @@ alert("发布成功！");
 }
 
 .publish-modal input,
-.publish-modal textarea {
+.publish-modal textarea,
+.publish-modal select {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid #e2e8f0;
@@ -1246,6 +1260,14 @@ alert("发布成功！");
   transition: all 0.3s;
   background: #f7fafc;
   font-family: inherit;
+}
+
+.publish-modal select {
+  cursor: pointer;
+}
+
+.publish-modal select option {
+  padding: 10px;
 }
 
 .publish-modal input:focus,
